@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 
 import jsqlite.Database;
 import jsqlite.Stmt;
@@ -13,11 +14,11 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Environment;
+import android.util.Log;
 
 public class DataBaseHelper
 extends SQLiteOpenHelper {
 
-	// The Android's default system path of your application database.
 	private static String DB_PATH = "/data/data/com.example.a05spatialite/databases/";
 	private static String DB_NAME = "geodb.sqlite";
 
@@ -27,7 +28,6 @@ extends SQLiteOpenHelper {
 	/**
 	 * Constructor Takes and keeps a reference of the passed context in order to
 	 * access to the application assets and resources.
-	 * 
 	 * @param context
 	 */
 	public DataBaseHelper(Context context) {
@@ -149,13 +149,11 @@ extends SQLiteOpenHelper {
 				sb.append("\t").append("SPATIALITE_VERSION: " + stmt01.column_string(0));
 				sb.append("\n");
 			}
-	
 			stmt01 = db.prepare("SELECT proj4_version();");
 			if (stmt01.step()) {
 				sb.append("\t").append("PROJ4_VERSION: " + stmt01.column_string(0));
 				sb.append("\n");
 			}
-	
 			stmt01 = db.prepare("SELECT geos_version();");
 			if (stmt01.step()) {
 				sb.append("\t").append("GEOS_VERSION: " + stmt01.column_string(0));
@@ -167,5 +165,40 @@ extends SQLiteOpenHelper {
 		}
 		sb.append("Done...\n");
 		return sb.toString();
+	}
+
+	/**
+	 * gibt den Extent der Geometrie der gegebenen Tabelle zurück
+	 * als arry von vier floats in der Form {x0,y0,x1,y1} oder
+	 * <code>null</code> falls Fehler.
+	 * @param tab
+	 * @return
+	 */
+	public double[] queryExtent(String tab) {
+		double[] r = {};
+		StringBuffer query = new StringBuffer()
+		.append("SELECT\n")
+		.append("\tX(PointN(ExteriorRing(Extent(\"geometry\")),1)),\n")
+		.append("\tY(PointN(ExteriorRing(Extent(\"geometry\")),1)),\n")
+		.append("\tX(PointN(ExteriorRing(Extent(\"geometry\")),3)),\n")
+		.append("\tY(PointN(ExteriorRing(Extent(\"geometry\")),3))\n")
+		.append("FROM \"")
+		.append(tab)
+		.append("\"");
+		try {
+			Stmt stmt = db.prepare(query.toString());
+			if (stmt.step()) {
+				r = new double[] {
+					stmt.column_double(0),
+					stmt.column_double(1),
+					stmt.column_double(2),
+					stmt.column_double(3)
+				};
+			}
+			Log.v("DB",tab + "'s extent = " + Arrays.toString(r));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return r;
 	}
 }

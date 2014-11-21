@@ -1,5 +1,7 @@
 package com.example.a05spatialite;
 
+import java.util.Arrays;
+
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
@@ -19,7 +21,20 @@ extends ActionBarActivity {
 
 		app = (AppSpatialite) getApplication();
 		tvLabel = (TextView) findViewById(R.id.tvLabel);
-		tvLabel.setText(app.db.queryVersions());
+
+		// baue einen String auf mit einigen Testergebnissen
+		// um zu zeigen, daﬂ r‰umliche Abfragen funktionieren
+		StringBuffer s = new StringBuffer()
+		.append(app.db.queryVersions())
+		.append("\n");
+		String[] tabs = new String[] {"osm_points","osm_places","osm_railways"};
+		for (String tab : tabs) {
+			s.append(tab)
+			.append(" extent = ")
+			.append(Arrays.toString(app.db.queryExtent(tab)));
+		}
+		// gib den Probestring aus
+		tvLabel.setText(s.toString());
 	}
 
 	@Override
