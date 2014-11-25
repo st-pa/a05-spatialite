@@ -7,5 +7,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/appcompat_v7"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
+	<classpathentry kind="lib" path="libs/androidsvg-1.2.1.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

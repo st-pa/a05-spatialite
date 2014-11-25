@@ -19,8 +19,11 @@ import android.util.Log;
 public class DataBaseHelper
 extends SQLiteOpenHelper {
 
-	private static String DB_PATH = "/data/data/com.example.a05spatialite/databases/";
-	private static String DB_NAME = "geodb.sqlite";
+	protected static final String DB_PATH = "/data/data/com.example.a05spatialite/databases/";
+	protected static final String DB_NAME = "geodb.sqlite";
+	protected static final String TAB_RAILWAYS = "osm_railways";
+	protected static final String TAB_POINTS = "osm_points";
+	protected static final String TAB_PLACES = "osm_places";
 
 	private Database db;
 	private final Context context;
@@ -168,11 +171,12 @@ extends SQLiteOpenHelper {
 	}
 
 	/**
-	 * gibt den Extent der Geometrie der gegebenen Tabelle zur�ck
-	 * als arry von vier floats in der Form {x0,y0,x1,y1} oder
-	 * <code>null</code> falls Fehler.
-	 * @param tab
-	 * @return
+	 * gibt den Extent der Geometrie der gegebenen Tabelle zurück
+	 * als array von vier doubles in der Form {x0,y0,x1,y1} oder
+	 * <code>null</code> falls Fehler, wobei p0(x0|y0) die linke
+	 * obere und p1(x1|y1) die rechte untere ecke ist.
+	 * @param tab {@link String}
+	 * @return double[]
 	 */
 	public double[] queryExtent(String tab) {
 		double[] r = {};
@@ -200,5 +204,68 @@ extends SQLiteOpenHelper {
 			e.printStackTrace();
 		}
 		return r;
+	}
+
+	/**
+	 * @param width breite der ausgabegraphik
+	 * @param height höhe der ausgabegraphik
+	 * @param dx x-verschiebung, sollte minus x-wert extent-ecke sein
+	 * @param dy y-verschiebung, sollte minus y-wert extent-ecke sein
+	 * @param sx x-skalierung, sollte ausgabebreite geteilt durch extentbreite sein
+	 * @param sy y-skalierung, sollte ausgabehöhe geteilt durch extenthöhe sein
+	 * @return
+	 */
+	public String queryRailwaysSVG(
+		double width, double height,
+		double dx, double dy,
+		double sx, double sy
+	) {
+		// sql-query aufbauen
+		StringBuffer query = new StringBuffer()
+		.append("SELECT AsSVG(\n")
+		.append("\tScaleCoordinates(\n")
+		.append("\t\tShiftCoordinates(\n")
+		.append("\t\t\t\"geometry\",\n")
+		.append("\t\t\t")
+		.append(Double.toString(dx))
+		.append(",")
+		.append(Double.toString(dy))
+		.append("\n\t\t),\n")
+		.append(Double.toString(sx))
+		.append(",")
+		.append(Double.toString(sy))
+		.append("\n\t)\n")
+		.append(")\nFROM ")
+		.append(TAB_RAILWAYS)
+		.append("\" WHERE length(\"name\") > 0");
+		// svg-header aufbauen
+		StringBuffer svg = new StringBuffer()
+		.append("<?xml version=\"1.0\" standalone=\"no\" ?>")
+		.append("<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 20010904//EN\" \"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\">\n")
+		.append("<svg width=\")")
+		.append(Double.toString(width))
+		.append("\" height=\"")
+		.append(Double.toString(height))
+		.append("\" xmlns=\"http://www.w3.org/2000/svg\"")
+		.append("xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n");
+		// sql-abfrage starten
+		Log.v("DB","query railways geometry: " + query.toString());
+		try {
+			Stmt stmt = db.prepare(query.toString());
+			// schleife durch alle gelieferten geometrieen
+			while (stmt.step()) {
+				/* <polyline fill="lightgray" stroke="red" stroke-width="5px" points="..."/> */
+				svg
+				.append("<polyline points=\"")
+				.append(stmt.column_string(0))
+				.append("\" />\n");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		// svg-footer abschließen
+		svg.append("</svg>");
+		Log.v("DB","done with query railways geometry");
+		return svg.toString();
 	}
 }
