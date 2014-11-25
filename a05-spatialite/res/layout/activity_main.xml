@@ -24,7 +24,16 @@
             android:id="@+id/ivTest"
             android:layout_width="276dp"
             android:layout_height="302dp"
-            android:src="@drawable/abc_ab_bottom_solid_dark_holo" />
+            android:minHeight="302dp"
+            android:minWidth="276dp"
+            android:src="@drawable/ic_launcher" />
+
+        <Button
+            android:id="@+id/btTest"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="rendere SVG aus DB als drawable picture canvas zeugs imageviewanguckanzeigedings" />
+
     </LinearLayout>
 
 </ScrollView>

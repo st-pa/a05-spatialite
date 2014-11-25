@@ -6,9 +6,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.Vector;
 
 import jsqlite.Database;
 import jsqlite.Stmt;
+import jsqlite.TableResult;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
@@ -220,7 +222,7 @@ extends SQLiteOpenHelper {
 		double dx, double dy,
 		double sx, double sy
 	) {
-		// sql-query aufbauen
+		// sql-abfrage aufbauen
 		StringBuffer query = new StringBuffer()
 		.append("SELECT AsSVG(\n")
 		.append("\tScaleCoordinates(\n")
@@ -230,35 +232,40 @@ extends SQLiteOpenHelper {
 		.append(Double.toString(dx))
 		.append(",")
 		.append(Double.toString(dy))
-		.append("\n\t\t),\n")
+		.append("\n\t\t),\n\t\t")
 		.append(Double.toString(sx))
 		.append(",")
 		.append(Double.toString(sy))
 		.append("\n\t)\n")
-		.append(")\nFROM ")
+		.append(")\nFROM \"")
 		.append(TAB_RAILWAYS)
-		.append("\" WHERE length(\"name\") > 0");
+		.append("\" ")
+		.append("WHERE length(\"name\") > 0")
+		;
 		// svg-header aufbauen
 		StringBuffer svg = new StringBuffer()
 		.append("<?xml version=\"1.0\" standalone=\"no\" ?>")
 		.append("<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 20010904//EN\" \"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\">\n")
-		.append("<svg width=\")")
+		.append("<svg width=\"")
 		.append(Double.toString(width))
 		.append("\" height=\"")
 		.append(Double.toString(height))
-		.append("\" xmlns=\"http://www.w3.org/2000/svg\"")
+		.append("\" xmlns=\"http://www.w3.org/2000/svg\" ")
 		.append("xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n");
 		// sql-abfrage starten
 		Log.v("DB","query railways geometry: " + query.toString());
 		try {
-			Stmt stmt = db.prepare(query.toString());
+			TableResult tr = db.get_table(query.toString());
 			// schleife durch alle gelieferten geometrieen
-			while (stmt.step()) {
-				/* <polyline fill="lightgray" stroke="red" stroke-width="5px" points="..."/> */
-				svg
-				.append("<polyline points=\"")
-				.append(stmt.column_string(0))
-				.append("\" />\n");
+			if (tr != null && tr.nrows > 0) {
+				Vector<String[]> rows = tr.rows;
+				for (String[] row : rows) {
+					/* <polyline fill="lightgray" stroke="red" stroke-width="5px" points="..."/> */
+					svg
+					.append("<path d=\"")
+					.append(row[0])
+					.append("\" fill=\"none\" stroke=\"black\" />\n");
+				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
