@@ -1,5 +1,6 @@
 package com.example.a05spatialite;
 
+import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.PictureDrawable;
 import android.os.Bundle;
@@ -9,6 +10,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewTreeObserver;
+import android.view.ViewTreeObserver.OnPreDrawListener;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -27,35 +30,38 @@ extends ActionBarActivity implements OnClickListener {
 	private ImageView ivTest;
 	private Button btTest;
 
+	private int height;
+	private int width;
+	private Context context;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
 		app = (AppSpatialite) getApplication();
+		context = (Context) this;
 		tvLabel = (TextView) findViewById(R.id.tvLabel);
 		ivTest = (ImageView) findViewById(R.id.ivTest);
 		btTest = (Button) findViewById(R.id.btTest);
 		btTest.setOnClickListener(this);
-/*
-		// baue einen String auf mit einigen Testergebnissen
-		// um zu zeigen, daß räumliche Abfragen funktionieren
-		StringBuffer s = new StringBuffer()
-		.append(app.db.queryVersions())
-		.append("\n");
-		String[] tabs = new String[] {"osm_points","osm_places","osm_railways"};
-		for (String tab : tabs) {
-			s.append(tab)
-			.append(" extent = ")
-			.append(Arrays.toString(app.db.queryExtent(tab)))
-			.append("\n");
-		}
-		// gib den sql-Probestring aus
-		tvLabel.setText(s.toString());
-*/
+		ViewTreeObserver vto = ivTest.getViewTreeObserver();
+		vto.addOnPreDrawListener(new OnPreDrawListener() {
+			@Override
+			public boolean onPreDraw() {
+				clickedBtTest();
+				ivTest.getViewTreeObserver().removeOnPreDrawListener(this);
+				height = ivTest.getHeight();
+				width = ivTest.getWidth();
+				Toast.makeText(
+						context,
+						String.format("width:%d, height:%d",width,height),
+						Toast.LENGTH_LONG
+				).show();
+				return true;
+			}
+		});
 	}
-	
-	
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
